@@ -2,11 +2,6 @@
 # -*- coding: utf-8 -*-
 # vim:tabstop=4:expandtab:sw=4:softtabstop=4
 
-# TODO
-#   * do smart image translation, CSS' often declare background and background-image urls
-#       check python-cssutils, if it's of any use. for now it's a naive regexp
-#
-
 import base64
 import mimetypes
 import re
@@ -129,11 +124,11 @@ def replace_backgrounds(base_url, soup):
         try:
             for property, value in [(p.strip(), v.strip()) for (p, v) in
                                     [x.strip().split(':') for x in e['style'].strip().split(';') if len(x) > 0]]:
-                if property == 'background-image' and value.startswith('url') and not value.startswith('url(data'):
+                if (property == 'background-image' or property == 'background') and 'url(' in value and not 'url(data' in value:
                     url = value[value.find("(") + 1:value.find(")")]
                     path = resolve_path(base_url, url)
                     img = data_encode_image(path.lower(), get_content(path, True))
-                    new_style.append((property, 'url(' + img + ')'))
+                    new_style.append((property, value.replace(url, img)))
                 else:
                     new_style.append((property, value))
             e['style'] = '; '.join(property + ': ' + value for property, value in new_style)
