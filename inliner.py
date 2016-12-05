@@ -14,11 +14,14 @@ import urllib
 import sys
 from bs4 import BeautifulSoup
 
+
 def is_remote(address):
     return urllib.parse.urlparse(address)[0] in ('http', 'https')
 
+
 def data_encode_image(name, content):
     return 'data:%s;base64,%s' % (mimetypes.guess_type(name)[0], base64.standard_b64encode(content).decode("utf-8"))
+
 
 def ignore_url(address):
     url_blacklist = ('getsatisfaction.com',
@@ -29,6 +32,7 @@ def ignore_url(address):
             return True
 
     return False
+
 
 def get_content(from_, expect_binary=False):
     if is_remote(from_):
@@ -45,6 +49,7 @@ def get_content(from_, expect_binary=False):
         with open(from_, "rb" if expect_binary else "r") as f:
             return f.read()
 
+
 def resolve_path(base, target):
     if True:
         return urllib.parse.urljoin(base, target)
@@ -60,10 +65,11 @@ def resolve_path(base, target):
             return target
     else:
         try:
-            base,rest = base.rsplit('/',1)
+            base, rest = base.rsplit('/', 1)
             return '%s/%s' % (base, target)
         except ValueError:
             return target
+
 
 def replace_javascript(base_url, soup):
     for js in soup.find_all('script', {'src': re.compile('.+')}):
@@ -76,7 +82,10 @@ def replace_javascript(base_url, soup):
             print('failed to load javascript from %s' % js['src'])
             print(e)
 
+
 css_url = re.compile(r'url\((.+)\)')
+
+
 def replace_css(base_url, soup):
     for css in soup.findAll('link', {'rel': 'stylesheet', 'href': re.compile('.+')}):
         try:
@@ -99,7 +108,8 @@ def replace_css(base_url, soup):
             print('failed to load css from %s' % css['href'])
             print(e)
 
-def replace_images(base_url,soup):
+
+def replace_images(base_url, soup):
     from itertools import chain
 
     for img in chain(soup.findAll('img', {'src': re.compile('.+')}),
@@ -112,24 +122,27 @@ def replace_images(base_url,soup):
             print('failed to load image from %s' % img['src'])
             print(e)
 
+
 def replace_backgrounds(base_url, soup):
     for e in soup.find_all(style=lambda x: x and 'background-image' in x):
         new_style = []
         try:
-            for property, value in [(p.strip(), v.strip()) for (p,v) in [x.strip().split(':') for x in e['style'].strip().split(';') if len(x) > 0]]:
+            for property, value in [(p.strip(), v.strip()) for (p, v) in
+                                    [x.strip().split(':') for x in e['style'].strip().split(';') if len(x) > 0]]:
                 if property == 'background-image' and value.startswith('url') and not value.startswith('url(data'):
-                    url = value[value.find("(")+1:value.find(")")]
+                    url = value[value.find("(") + 1:value.find(")")]
                     path = resolve_path(base_url, url)
                     img = data_encode_image(path.lower(), get_content(path, True))
-                    new_style.append((property, 'url('+img+')'))
+                    new_style.append((property, 'url(' + img + ')'))
                 else:
                     new_style.append((property, value))
-            e['style'] = '; '.join(property+': '+value for property, value in new_style)
+            e['style'] = '; '.join(property + ': ' + value for property, value in new_style)
         except Exception as e:
             print('failed to load background-image from %s' % e['style'])
             print(e)
 
-def main(url,output_filename):
+
+def main(url, output_filename):
     soup = BeautifulSoup(get_content(url))
 
     replace_javascript(url, soup)
@@ -137,9 +150,9 @@ def main(url,output_filename):
     replace_images(url, soup)
     replace_backgrounds(url, soup)
 
-    with open(output_filename,'wb') as res:
+    with open(output_filename, 'wb') as res:
         res.write(str(soup).encode("utf-8"))
+
 
 if __name__ == '__main__':
     main(sys.argv[1], sys.argv[2])
-
