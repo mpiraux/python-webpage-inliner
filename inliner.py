@@ -143,7 +143,7 @@ def replace_backgrounds(base_url, soup):
 
 
 def main(url, output_filename):
-    soup = BeautifulSoup(get_content(url))
+    soup = BeautifulSoup(get_content(url), 'lxml')
 
     replace_javascript(url, soup)
     replace_css(url, soup)
