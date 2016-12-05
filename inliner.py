@@ -137,7 +137,7 @@ def replace_backgrounds(base_url, soup):
             print(e)
 
 
-def main(url, output_filename):
+def inline(url, output_filename):
     soup = BeautifulSoup(get_content(url), 'lxml')
 
     replace_javascript(url, soup)
@@ -150,4 +150,4 @@ def main(url, output_filename):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1], sys.argv[2])
+    inline(sys.argv[1], sys.argv[2])
