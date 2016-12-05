@@ -112,12 +112,30 @@ def replace_images(base_url,soup):
             print('failed to load image from %s' % img['src'])
             print(e)
 
+def replace_backgrounds(base_url, soup):
+    for e in soup.find_all(style=lambda x: x and 'background-image' in x):
+        new_style = []
+        try:
+            for property, value in [(p.strip(), v.strip()) for (p,v) in [x.strip().split(':') for x in e['style'].strip().split(';') if len(x) > 0]]:
+                if property == 'background-image' and value.startswith('url') and not value.startswith('url(data'):
+                    url = value[value.find("(")+1:value.find(")")]
+                    path = resolve_path(base_url, url)
+                    img = data_encode_image(path.lower(), get_content(path, True))
+                    new_style.append((property, 'url('+img+')'))
+                else:
+                    new_style.append((property, value))
+            e['style'] = '; '.join(property+': '+value for property, value in new_style)
+        except Exception as e:
+            print('failed to load background-image from %s' % e['style'])
+            print(e)
+
 def main(url,output_filename):
     soup = BeautifulSoup(get_content(url))
 
     replace_javascript(url, soup)
     replace_css(url, soup)
     replace_images(url, soup)
+    replace_backgrounds(url, soup)
 
     with open(output_filename,'wb') as res:
         res.write(str(soup).encode("utf-8"))
